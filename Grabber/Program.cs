@@ -14,67 +14,27 @@ namespace Grabber
 {
     class Program
     {
-        static int p = 0;
+        static int p = 1;
         static void Main(string[] args)
         {
-            int kol = 0; //количество страниц в архиве
-            int index = 50; //количество страниц с отзывами об одном фильме
-
-            GetIndexFromReviewPage();
-
-            //цикл по всем страницам в одном фильме
-            for (int pageNumber = 0; pageNumber < index; pageNumber = pageNumber + 10)
-            {
-                // Отправляем GET запрос и получаем в ответ HTML-код сайта
-                string str = GetMovieNumber();
-                HttpWebRequest myHttpWebRequest = (HttpWebRequest)HttpWebRequest.Create(MakeURL(str, pageNumber));
-                myHttpWebRequest.KeepAlive = false;
-                myHttpWebRequest.UserAgent = "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-GB; rv:1.9.2.4) Gecko/20100611 Firefox/3.6.4";
-                myHttpWebRequest.Method = "GET";
-                myHttpWebRequest.Headers.Add(HttpRequestHeader.AcceptEncoding, "gzip");
-                HttpWebResponse myHttpWebResponse = (HttpWebResponse)myHttpWebRequest.GetResponse();
-
-                //формируем название архива
-                string path = @"D:\movie = " + str + "review" + pageNumber + ".gz";
-
-                using (FileStream file = File.OpenWrite(path))
-                {
-                    myHttpWebResponse.GetResponseStream().CopyTo(file);
-                }
-                Console.WriteLine("{0}", path);
-                kol++;
-            }
-            Console.WriteLine("number of pages = {0}", kol);
-            /* когда kol = 100 (например), засунуть их в большой архив*/
-
-
-            string directoryPath = @"D:\AllReviews0";
-            DirectoryInfo directorySelected = new DirectoryInfo(directoryPath);
-
+            GetOneMovieReviews();
             Console.ReadLine();
         }
 
         //получить ссылку на страницу с отзывом у конкретного фильма
-        public static string MakeURL (string movieNumber, int pageNum)
+        public static string MakeURL (int pageNum)
         {
             string url = "http://www.imdb.com/title/tt";  // Адрес страницы без индекса фильма
-            string newUrl = url + movieNumber + "/reviews?start=" + pageNum.ToString();
+            string number = String.Format("{0:0000000}", p); // Номер фильма на IMDB
+            string newUrl = url + number + "/reviews?start=" + pageNum.ToString();
+            //p++;
             return newUrl;
-        }
-
-        //вычислить номер фильма
-        public static string GetMovieNumber()
-        {
-            string num = "000000";
-            p++;
-            return num + p.ToString();
         }
 
         //получить первую страницу с отзывами в .html
         public static string GetFirstPageOfMovie()
         {
-            string mn = GetMovieNumber();
-            string url = "http://www.imdb.com/title/tt" + mn + "/reviews?start=0";
+            string url = MakeURL(0); // Получаем ссылку на первую страницу с отзывами (нулевую)
 
             HttpWebRequest myHttpWebRequest = (HttpWebRequest)HttpWebRequest.Create(url);
             myHttpWebRequest.KeepAlive = false;
@@ -82,7 +42,8 @@ namespace Grabber
             myHttpWebRequest.Method = "GET";
             HttpWebResponse myHttpWebResponse = (HttpWebResponse)myHttpWebRequest.GetResponse();
 
-            string path = @"D:\movie = " + mn + "page0.html";
+            string number = String.Format("{0:0000000}", p);
+            string path = @"D:\movie = " + number + "page0.html";
 
             using (FileStream file = File.OpenWrite(path))
             {
@@ -91,16 +52,82 @@ namespace Grabber
             return path;
         }
 
-        public static void GetIndexFromReviewPage()
+        public static int GetIndexFromFirstPage()
         {
-            GetFirstPageOfMovie();
             string html = File.ReadAllText(GetFirstPageOfMovie());
+            int index = 0;
 
-            string sPattern = "Index [0-9] reviews in total";
-
-            Regex r = new Regex(sPattern, RegexOptions.IgnoreCase);
+            Regex r = new Regex("([0-9]+\\s(reviews in total))");
             Match m = r.Match(html);
-            /*искать совпадения и вытаскивать оттуда число index*/
+            if (!m.Success)
+            {
+                return 0;
+            }
+            else
+            {
+                string str = m.Value.Split(' ')[0];
+
+                if (!Int32.TryParse(str, out index))
+                {
+                    return 0;
+                }
+                if ((index == 0) || (index == 10))
+                {
+                    return 0;
+                }
+                else
+                {
+                    return index / 10;
+                }
+            }
+        }
+
+        public static void GetOneMovieReviews()
+        {
+            int kol = 0; //количество страниц в архиве
+            int index = GetIndexFromFirstPage(); //количество страниц с отзывами об одном фильме
+
+            //цикл по всем страницам в одном фильме
+            for (int pageNumber = 0; pageNumber < index + 10; pageNumber = pageNumber + 10)
+            {
+                // Отправляем GET запрос и получаем в ответ HTML-код сайта
+                
+                HttpWebRequest myHttpWebRequest = (HttpWebRequest)HttpWebRequest.Create(MakeURL(pageNumber));
+                myHttpWebRequest.KeepAlive = false;
+                myHttpWebRequest.UserAgent = "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-GB; rv:1.9.2.4) Gecko/20100611 Firefox/3.6.4";
+                myHttpWebRequest.Method = "GET";
+                myHttpWebRequest.Headers.Add(HttpRequestHeader.AcceptEncoding, "gzip");
+                HttpWebResponse myHttpWebResponse;
+                
+                // Фильм с указанным номером может не существовать, тогда страница не найдена
+                try
+                {
+                    myHttpWebResponse = (HttpWebResponse)myHttpWebRequest.GetResponse();
+                }
+                catch (WebException ex)
+                {
+                    Console.WriteLine(MakeURL(pageNumber) + ex.Message);
+                    return;
+                }
+
+                //формируем название архива
+                string number = String.Format("{0:0000000}", p);
+                string path = @"D:\movie = " + number + "review" + pageNumber + ".gz";
+
+                using (FileStream file = File.OpenWrite(path))
+                {
+                    myHttpWebResponse.GetResponseStream().CopyTo(file);
+                }
+                Console.WriteLine("{0}", path);
+                kol++;
+            }
+            if (kol > index)
+            {
+                p++;
+                GetOneMovieReviews();
+            }
+
+            Console.WriteLine("number of pages = {0}", kol);
         }
 
     }
