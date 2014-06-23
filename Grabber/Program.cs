@@ -8,8 +8,6 @@ using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using System.Net;
 
-
-
 namespace Grabber
 {
     class Program
@@ -27,7 +25,6 @@ namespace Grabber
             string url = "http://www.imdb.com/title/tt";  // Адрес страницы без индекса фильма
             string number = String.Format("{0:0000000}", p); // Номер фильма на IMDB
             string newUrl = url + number + "/reviews?start=" + pageNum.ToString();
-            //p++;
             return newUrl;
         }
 
@@ -37,10 +34,19 @@ namespace Grabber
             string url = MakeURL(0); // Получаем ссылку на первую страницу с отзывами (нулевую)
 
             HttpWebRequest myHttpWebRequest = (HttpWebRequest)HttpWebRequest.Create(url);
-            myHttpWebRequest.KeepAlive = false;
+            myHttpWebRequest.KeepAlive = true;
             myHttpWebRequest.UserAgent = "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-GB; rv:1.9.2.4) Gecko/20100611 Firefox/3.6.4";
             myHttpWebRequest.Method = "GET";
-            HttpWebResponse myHttpWebResponse = (HttpWebResponse)myHttpWebRequest.GetResponse();
+            HttpWebResponse myHttpWebResponse;
+            try
+            {
+                myHttpWebResponse = (HttpWebResponse)myHttpWebRequest.GetResponse();
+            }
+            catch (WebException ex)
+            {
+                Console.WriteLine(MakeURL(0) + ex.Message);
+                return string.Empty;
+            }
 
             string number = String.Format("{0:0000000}", p);
             string path = @"D:\movie = " + number + "page0.html";
@@ -54,7 +60,12 @@ namespace Grabber
 
         public static int GetIndexFromFirstPage()
         {
-            string html = File.ReadAllText(GetFirstPageOfMovie());
+            string path = GetFirstPageOfMovie();
+            if (string.IsNullOrEmpty(path))
+            {
+                return 0;
+            } 
+            string html = File.ReadAllText(path);
             int index = 0;
 
             Regex r = new Regex("([0-9]+\\s(reviews in total))");
@@ -88,12 +99,12 @@ namespace Grabber
             int index = GetIndexFromFirstPage(); //количество страниц с отзывами об одном фильме
 
             //цикл по всем страницам в одном фильме
-            for (int pageNumber = 0; pageNumber < index + 10; pageNumber = pageNumber + 10)
+            for (int pageNumber = 0; pageNumber < (index + 1) * 10; pageNumber = pageNumber + 10)
             {
                 // Отправляем GET запрос и получаем в ответ HTML-код сайта
                 
                 HttpWebRequest myHttpWebRequest = (HttpWebRequest)HttpWebRequest.Create(MakeURL(pageNumber));
-                myHttpWebRequest.KeepAlive = false;
+                myHttpWebRequest.KeepAlive = true;
                 myHttpWebRequest.UserAgent = "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-GB; rv:1.9.2.4) Gecko/20100611 Firefox/3.6.4";
                 myHttpWebRequest.Method = "GET";
                 myHttpWebRequest.Headers.Add(HttpRequestHeader.AcceptEncoding, "gzip");
@@ -106,8 +117,8 @@ namespace Grabber
                 }
                 catch (WebException ex)
                 {
-                    Console.WriteLine(MakeURL(pageNumber) + ex.Message);
-                    return;
+                    Console.WriteLine(ex.Message);
+                    continue;
                 }
 
                 //формируем название архива
@@ -121,13 +132,8 @@ namespace Grabber
                 Console.WriteLine("{0}", path);
                 kol++;
             }
-            if (kol > index)
-            {
-                p++;
-                GetOneMovieReviews();
-            }
-
-            Console.WriteLine("number of pages = {0}", kol);
+            p++;
+            GetOneMovieReviews();
         }
 
     }
