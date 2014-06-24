@@ -12,14 +12,18 @@ namespace Grabber
 {
     class Program
     {
-        static int p = 1;
         static void Main(string[] args)
         {
-            GetOneMovieReviews();
-            Console.ReadLine();
+            for (int movie = 0; movie < 100; movie++)
+            {
+                List<string> links = URLGenerator.GetListOfLinksForEachMovie();
+                IMDBGrabber.pageGrabber(links);
+                URLGenerator.FilmNumber++;
+            }
+            Console.ReadLine();   
         }
 
-        //получить ссылку на страницу с отзывом у конкретного фильма
+        /*//получить ссылку на страницу с отзывом у конкретного фильма
         public static string MakeURL (int pageNum)
         {
             string url = "http://www.imdb.com/title/tt";  // Адрес страницы без индекса фильма
@@ -74,23 +78,20 @@ namespace Grabber
             {
                 return 0;
             }
+            string str = m.Value.Split(' ')[0];
+
+            if (!Int32.TryParse(str, out index))
+            {
+                return 0;
+            }
+            if ((index == 0) || (index == 10))
+            {
+                return 0;
+            }
             else
             {
-                string str = m.Value.Split(' ')[0];
-
-                if (!Int32.TryParse(str, out index))
-                {
-                    return 0;
-                }
-                if ((index == 0) || (index == 10))
-                {
-                    return 0;
-                }
-                else
-                {
-                    return index / 10;
-                }
-            }
+                return index / 10;
+            }            
         }
 
         public static void GetOneMovieReviews()
@@ -134,7 +135,7 @@ namespace Grabber
             }
             p++;
             GetOneMovieReviews();
-        }
+        }*/
 
     }
 }
