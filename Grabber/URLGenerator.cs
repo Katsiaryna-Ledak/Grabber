@@ -11,8 +11,8 @@ namespace Grabber
 {
     class URLGenerator
     {
-        static int filmNumber = 1;
-        static string pageNumber;
+        static int filmNumber = 1;  // Номер фильма на IMDB
+        static string pageNumber = "0";  //Номер страницы с отзывами
 
         public static int FilmNumber
         {
@@ -42,7 +42,7 @@ namespace Grabber
             }
             catch (WebException ex)
             {
-                Console.WriteLine(MakeURL("0") + ex.Message);
+                Console.WriteLine(url + ex.Message);
                 return string.Empty;
             }
 
@@ -60,11 +60,12 @@ namespace Grabber
         static string MakeURL(string pageNumber)
         {
             string url = "http://www.imdb.com/title/tt";  // Адрес страницы без индекса фильма
-            string number = String.Format("{0:0000000}", FilmNumber); // Номер фильма на IMDB
-            string newUrl = url + number + "/reviews?start=" + pageNumber;
+            string number = String.Format("{0:0000000}", FilmNumber); 
+            string newUrl = url + number + "/reviews?start=" + PageNumber;
             return newUrl;
         }
 
+        //получить количество отзывов о каждом фильме
         static int GetIndexFromFirstPage()
         {
             string path = GetFirstPageOfMovie();
@@ -87,26 +88,28 @@ namespace Grabber
             {
                 return 0;
             }
-            if ((index == 0) || (index == 10))
+            if (index == 0)
             {
                 return 0;
             }
-            else
-            {
-                return index / 10;
-            }            
+            return index;
         }
 
-        public static List<string> GetListOfLinksForEachMovie()
+        //формируем ссылку для грэббера
+        public static string GetLinkForMovie()
         {
-            List<string> links = new List<string>();
+            string link = "";
             int index = GetIndexFromFirstPage();
-            for (int pageNumber = 0; pageNumber < (index + 1) * 10; pageNumber = pageNumber + 10)
+            if (index <= 10)
             {
-                links.Add(MakeURL(pageNumber.ToString()));
+                link = MakeURL("0");
             }
-       
-            return links;
+            else
+            {
+                string number = String.Format("{0:0000000}", FilmNumber);
+                link = "http://www.imdb.com/title/tt" + number + "/reviews?count=" + index;
+            }
+            return link;
         }
     }
 }

@@ -14,128 +14,13 @@ namespace Grabber
     {
         static void Main(string[] args)
         {
-            for (int movie = 0; movie < 100; movie++)
+            for (int movie = 0; movie < 500; movie++)
             {
-                List<string> links = URLGenerator.GetListOfLinksForEachMovie();
-                IMDBGrabber.pageGrabber(links);
+                string link = URLGenerator.GetLinkForMovie();
+                IMDBGrabber.pageGrabber(link);
                 URLGenerator.FilmNumber++;
             }
             Console.ReadLine();   
         }
-
-        /*//получить ссылку на страницу с отзывом у конкретного фильма
-        public static string MakeURL (int pageNum)
-        {
-            string url = "http://www.imdb.com/title/tt";  // Адрес страницы без индекса фильма
-            string number = String.Format("{0:0000000}", p); // Номер фильма на IMDB
-            string newUrl = url + number + "/reviews?start=" + pageNum.ToString();
-            return newUrl;
-        }
-
-        //получить первую страницу с отзывами в .html
-        public static string GetFirstPageOfMovie()
-        {
-            string url = MakeURL(0); // Получаем ссылку на первую страницу с отзывами (нулевую)
-
-            HttpWebRequest myHttpWebRequest = (HttpWebRequest)HttpWebRequest.Create(url);
-            myHttpWebRequest.KeepAlive = true;
-            myHttpWebRequest.UserAgent = "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-GB; rv:1.9.2.4) Gecko/20100611 Firefox/3.6.4";
-            myHttpWebRequest.Method = "GET";
-            HttpWebResponse myHttpWebResponse;
-            try
-            {
-                myHttpWebResponse = (HttpWebResponse)myHttpWebRequest.GetResponse();
-            }
-            catch (WebException ex)
-            {
-                Console.WriteLine(MakeURL(0) + ex.Message);
-                return string.Empty;
-            }
-
-            string number = String.Format("{0:0000000}", p);
-            string path = @"D:\movie = " + number + "page0.html";
-
-            using (FileStream file = File.OpenWrite(path))
-            {
-                myHttpWebResponse.GetResponseStream().CopyTo(file);
-            }
-            return path;
-        }
-
-        public static int GetIndexFromFirstPage()
-        {
-            string path = GetFirstPageOfMovie();
-            if (string.IsNullOrEmpty(path))
-            {
-                return 0;
-            } 
-            string html = File.ReadAllText(path);
-            int index = 0;
-
-            Regex r = new Regex("([0-9]+\\s(reviews in total))");
-            Match m = r.Match(html);
-            if (!m.Success)
-            {
-                return 0;
-            }
-            string str = m.Value.Split(' ')[0];
-
-            if (!Int32.TryParse(str, out index))
-            {
-                return 0;
-            }
-            if ((index == 0) || (index == 10))
-            {
-                return 0;
-            }
-            else
-            {
-                return index / 10;
-            }            
-        }
-
-        public static void GetOneMovieReviews()
-        {
-            int kol = 0; //количество страниц в архиве
-            int index = GetIndexFromFirstPage(); //количество страниц с отзывами об одном фильме
-
-            //цикл по всем страницам в одном фильме
-            for (int pageNumber = 0; pageNumber < (index + 1) * 10; pageNumber = pageNumber + 10)
-            {
-                // Отправляем GET запрос и получаем в ответ HTML-код сайта
-                
-                HttpWebRequest myHttpWebRequest = (HttpWebRequest)HttpWebRequest.Create(MakeURL(pageNumber));
-                myHttpWebRequest.KeepAlive = true;
-                myHttpWebRequest.UserAgent = "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-GB; rv:1.9.2.4) Gecko/20100611 Firefox/3.6.4";
-                myHttpWebRequest.Method = "GET";
-                myHttpWebRequest.Headers.Add(HttpRequestHeader.AcceptEncoding, "gzip");
-                HttpWebResponse myHttpWebResponse;
-                
-                // Фильм с указанным номером может не существовать, тогда страница не найдена
-                try
-                {
-                    myHttpWebResponse = (HttpWebResponse)myHttpWebRequest.GetResponse();
-                }
-                catch (WebException ex)
-                {
-                    Console.WriteLine(ex.Message);
-                    continue;
-                }
-
-                //формируем название архива
-                string number = String.Format("{0:0000000}", p);
-                string path = @"D:\movie = " + number + "review" + pageNumber + ".gz";
-
-                using (FileStream file = File.OpenWrite(path))
-                {
-                    myHttpWebResponse.GetResponseStream().CopyTo(file);
-                }
-                Console.WriteLine("{0}", path);
-                kol++;
-            }
-            p++;
-            GetOneMovieReviews();
-        }*/
-
     }
 }
