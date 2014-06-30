@@ -10,7 +10,7 @@ namespace Grabber
 {
     class IMDBGrabber
     {
-        public static void pageGrabber(string link)
+        public void pageGrabber(string link, int filmID)
         {
             HttpWebRequest myHttpWebRequest = (HttpWebRequest)HttpWebRequest.Create(link);
             myHttpWebRequest.KeepAlive = true;
@@ -22,23 +22,31 @@ namespace Grabber
             // Фильм с указанным номером может не существовать, тогда страница не найдена
             try
             {
-                myHttpWebResponse = (HttpWebResponse)myHttpWebRequest.GetResponse();
+                myHttpWebResponse =  (HttpWebResponse)myHttpWebRequest.GetResponse();
             }
-            catch (WebException ex)
+            catch (WebException ex) 
             {
                 Console.WriteLine(ex.Message);
                 return;
             }
 
             //формируем название архива
-            string number = String.Format("{0:0000000}", URLGenerator.FilmNumber);
-            string path = @"D:\movie = " + number + ".gz";
+            string number = String.Format("{0:0000000}", filmID);
+            string path = @"D:\reviews\movie = " + number + ".gz";
 
             using (FileStream file = File.OpenWrite(path))
             {
                 myHttpWebResponse.GetResponseStream().CopyTo(file);
             }
             Console.WriteLine("{0}", path);
-        }                             
+        }   
+        
+        public Task pageGrabberAsync(string link, int filmID)
+        {
+            return Task.Run(() =>
+            {
+                pageGrabber(link, filmID);
+            });
+        }    
     }
 }

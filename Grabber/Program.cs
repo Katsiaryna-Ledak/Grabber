@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using System.Net;
+using System.Collections;
 
 namespace Grabber
 {
@@ -14,13 +15,17 @@ namespace Grabber
     {
         static void Main(string[] args)
         {
-            for (int movie = 0; movie < 500; movie++)
+            ServicePointManager.DefaultConnectionLimit = 100;
+            URLGenerator gen = new URLGenerator();
+            IMDBGrabber grabber = new IMDBGrabber();
+
+            foreach (string myLink in gen.GetLinkForMovie(1))
             {
-                string link = URLGenerator.GetLinkForMovie();
-                IMDBGrabber.pageGrabber(link);
-                URLGenerator.FilmNumber++;
+                // throttling
+               Task t = grabber.pageGrabberAsync(myLink, gen.FilmNumber);
             }
-            Console.ReadLine();   
+
+            Console.ReadLine();
         }
     }
 }
